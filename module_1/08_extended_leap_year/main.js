@@ -17,6 +17,9 @@ do {
   );
 } while (!Number.isInteger(end_year) || end_year <= start_year);
 
+document.querySelector("#heading").innerText =
+  `Start year: ${start_year} End year: ${end_year}`;
+
 for (let year = start_year; year <= end_year; year++) {
   if (!checkForLeapYear(year)) continue;
   const li = document.createElement("li");
