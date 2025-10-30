@@ -7,7 +7,7 @@ let input_number;
 if (confirmation) {
   do {
     input_number = Number(prompt("Enter a number:"));
-  } while (!Number.isInteger(input_number));
+  } while (isNaN(input_number));
   switch (Math.sign(input_number)) {
     case -1:
       result_msg = "The square root of a negative number is not defined.";
