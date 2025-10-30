@@ -11,3 +11,4 @@
   - [07_random_dice](./module_1/07_random_dice/)
   - [08_extended_leap_year](./module_1/08_extended_leap_year/)
   - [09_prime_number](./module_1/09_prime_number/)
+  - [10_probability](./module_1/10_probability/)
