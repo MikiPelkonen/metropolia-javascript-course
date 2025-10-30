@@ -9,3 +9,4 @@
   - [05_leap_year](./module_1/05_leap_year/)
   - [06_square_root](./module_1/06_square_root/)
   - [07_random_dice](./module_1/07_random_dice/)
+  - [08_extended_leap_year](./module_1/08_extended_leap_year/)
