@@ -1,7 +1,6 @@
 "use strict";
 
-const confirmation = confirm("Should i calculate the square root?");
-console.log(confirmation);
+const confirmation = confirm("Should I calculate the square root?");
 
 let result_msg;
 let input_number;
@@ -9,11 +8,10 @@ if (confirmation) {
   do {
     input_number = Number(prompt("Enter a number:"));
   } while (!Number.isInteger(input_number));
-  switch (input_number) {
-    case input_number < 0:
+  switch (Math.sign(input_number)) {
+    case -1:
       result_msg = "The square root of a negative number is not defined.";
       break;
-
     default:
       const square_root = Math.sqrt(input_number);
       result_msg = `The square root of number ${input_number} is ${square_root}.`;
