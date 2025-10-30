@@ -3,7 +3,6 @@
 set README "README.md"
 
 echo "# metropolia-javascript-course" >$README
-echo ----- >>$README
 echo "## 📖 Table of Contents" >>$README
 echo "" >>$README
 

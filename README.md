@@ -1,5 +1,4 @@
 # metropolia-javascript-course
------
 ## 📖 Table of Contents
 
 - [module_1](./module_1/)
