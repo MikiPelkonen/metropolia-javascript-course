@@ -39,10 +39,10 @@ function promptNum(promptMsg) {
   const timeoutMs = 50;
   return new Promise((resolve, reject) => {
     setTimeout(() => {
-      const rawInput = prompt(promptMsg)?.trim();
-      if (rawInput === "" || isNaN(rawInput) || rawInput === null)
-        reject(`Invalid input: ${rawInput}. Needs to be a number.`);
-      resolve(Number(rawInput));
+      const userInput = prompt(promptMsg)?.trim();
+      if (userInput === "" || isNaN(userInput) || userInput === null)
+        reject(`Invalid input: ${userInput}. Needs to be a number.`);
+      resolve(Number(userInput));
     }, timeoutMs);
   });
 }
