@@ -15,5 +15,4 @@
   - [09_prime_number](./module_1/09_prime_number/)
   - [10_probability](./module_1/10_probability/)
 - [module_2](./module_2/)
-- [module_3](./module_3/)
-- [module_4](./module_4/)
+  - [01_reverse_order](./module_2/01_reverse_order/)
