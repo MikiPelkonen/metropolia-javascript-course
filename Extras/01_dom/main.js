@@ -20,20 +20,22 @@ for (let i = 0; i < 2; i++) {
 
 div.appendChild(ul);
 
-let startX, startY;
-
 const button = document.createElement("button");
 button.innerText = "Drag Me";
-button.style.transition = "transform 0.3s ease";
+
+let startX, startY;
+
 button.addEventListener("pointerdown", (evt) => {
   button.setPointerCapture(evt.pointerId);
   startX = evt.clientX;
   startY = evt.clientY;
+  button.style.transition = "transform 0.2s ease";
   console.log(`Pointer with ID: ${evt.pointerId} captured.`);
 });
 
 button.addEventListener("pointermove", (evt) => {
   if (button.hasPointerCapture(evt.pointerId)) {
+    console.log(`Pointer with ID: ${evt.pointerId} on move.`);
     button.style.transform = `translate(${evt.clientX - startX}px, ${evt.clientY - startY}px)`;
   }
 });
@@ -42,6 +44,7 @@ button.addEventListener("pointerup", (evt) => {
   if (button.hasPointerCapture(evt.pointerId)) {
     button.releasePointerCapture(evt.pointerId);
     console.log(`Pointer with ID: ${evt.pointerId} released.`);
+    button.style.transition = "transform 1s cubic-bezier(0.15, -0.75, 0.25, 1)";
     button.style.transform = `translate(0)`;
   }
 });
