@@ -7,19 +7,39 @@ style.textContent = `
       display: flex;
       flex-direction: column;
       align-items: center;
+      font-family: system-ui;
     }
     article {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
       width: 400px;
       height: 400px;
       background-color: rgba(22,22,22,03); 
       border-radius: 0.25rem;
       box-shadow: 1px 3px 6px rgba(22,22,22,0.7);
     }
+    h1 {
+      color: aquamarine;
+    }
+    ol {
+      display: flex;
+      width: 80%;
+      flex-direction: column;
+    }
+    li {
+      color: ivory;
+      font-size: 1.25rem;
+    }
 `;
 document.head.appendChild(style);
 
-const questList = document.createElement("article");
-body.appendChild(questList);
+const guestList = document.createElement("article");
+const guestListHeader = document.createElement("h1");
+guestList.appendChild(guestListHeader);
+guestListHeader.innerText = "Guest list:";
+
+body.appendChild(guestList);
 
 const getGuestCount = () => {
   return new Promise((resolve) => {
@@ -64,6 +84,13 @@ async function getNames() {
   return guestList;
 }
 
+const orderedList = document.createElement("ol");
+guestList.appendChild(orderedList);
+
 getNames().then((guestList) => {
-  console.log(guestList);
+  for (let guest of guestList.sort()) {
+    const listItem = document.createElement("li");
+    listItem.innerText = guest;
+    orderedList.appendChild(listItem);
+  }
 });
