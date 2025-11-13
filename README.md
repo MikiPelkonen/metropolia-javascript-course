@@ -3,6 +3,7 @@
 
 - [Extras](./Extras/)
   - [01_dom](./Extras/01_dom/)
+  - [02_fullstack](./Extras/02_fullstack/)
 - [module_1](./module_1/)
   - [01_hello_world](./module_1/01_hello_world/)
   - [02_prompt_and_greet](./module_1/02_prompt_and_greet/)
@@ -16,3 +17,5 @@
   - [10_probability](./module_1/10_probability/)
 - [module_2](./module_2/)
   - [01_reverse_order](./module_2/01_reverse_order/)
+  - [02_ordered_list](./module_2/02_ordered_list/)
+  - [03_six_dogs](./module_2/03_six_dogs/)
