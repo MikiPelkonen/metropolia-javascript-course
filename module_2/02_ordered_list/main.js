@@ -1,6 +1,7 @@
 (async () => {
   "use strict";
 
+  // Helpers
   function appError(msg, err) {
     return err instanceof Error
       ? new Error(msg, { cause: err })
@@ -8,15 +9,19 @@
   }
 
   function withTimeout(promise, ms) {
-    return Promise.race([
-      promise,
-      new Promise((_, reject) =>
-        setTimeout(() => reject(appError("Timeout", _)), ms),
-      ),
-    ]);
+    const timeouPromise = new Promise((_, reject) => {
+      setTimeout(
+        () =>
+          reject(
+            appError(`Promise failed to resolve before timeout: ${ms}ms.`),
+          ),
+        ms,
+      );
+    });
+
+    return Promise.race([promise, timeouPromise]);
   }
 
-  // Helpers
   Number.prototype.clamp = function (min, max) {
     return Math.min(Math.max(this, min), max);
   };
@@ -35,40 +40,37 @@
   async function createElement(tagName, props = {}, ...children) {
     const element = document.createElement(tagName);
     if (props && typeof props === "object") Object.assign(element, props);
-
     // RECURSIVE FUNC
     const appendChildElement = async (child) => {
       switch (true) {
         case child == null:
           return;
-
-        case child instanceof Node: // Append nodes directly
+        // Append nodes directly
+        case child instanceof Node:
           element.appendChild(child);
           return;
-
-        case child && typeof child.then === "function": // Resolve promises then append recursively
+        // Resolve promises then append recursively
+        case child && typeof child.then === "function":
           const resolved = await child;
-          await appendChildElement(resolved); // RECURSION
+          appendChildElement(resolved);
           return;
-
-        case Array.isArray(child): // Append each array item recursively
+        // Append each array item recursively
+        case Array.isArray(child):
           await Promise.all(
             child
               .flat(Infinity)
-              .map((childPromise) =>
-                withTimeout(appendChildElement(childPromise), 3000),
-              ),
-          ); // RECURSION
+              .map((childPromise) => appendChildElement(childPromise)),
+          );
           return;
-
-        default: // Handle primitives
+        // Handle primitives
+        default:
           const type = typeof child;
           switch (type) {
             case "string":
             case "number":
               element.appendChild(document.createTextNode(child));
               return;
-
+            // Skip possibly null or undefined
             case "boolean":
             case "undefined":
               console.warn(`Skipping child of type: ${type}`);
@@ -76,59 +78,68 @@
 
             default:
               throw appError(
-                `Failed to add child element: ${JSON.stringify(child)}`,
-                new TypeError(
-                  `Unsupported child type in <${tagName}>: ${JSON.stringify(child)} (type: ${type})`,
-                ),
+                `Unsupported child type in <${tagName}>: ${JSON.stringify(child)} (type: ${type})`,
               );
           }
       }
     };
 
-    await Promise.all(
-      children.map((child) => withTimeout(appendChildElement(child), 3000)),
+    await Promise.all(children.map((child) => appendChildElement(child))).catch(
+      (err) => console.error(appError("Failed to append child element:", err)),
     );
     return element;
   }
 
-  // Sync operations
-  function getRandomName() {
+  // Async operations
+  async function getRandomName() {
     const CHAR_CODE_A = 97;
     const ALPHABET_LENGTH = 26;
     const MAX_NAME_LENGTH = 12;
+    const FALLBACK_NAME = "Fallbacka";
 
-    const nameLength = random1To(MAX_NAME_LENGTH);
-    let rndName = "";
-    for (let i = 0; i < nameLength; i++) {
-      const code = CHAR_CODE_A + Math.floor(Math.random() * ALPHABET_LENGTH);
-      rndName += String.fromCharCode(code);
+    try {
+      const genRandomChar = async () => {
+        const code = CHAR_CODE_A + Math.floor(Math.random() * ALPHABET_LENGTH);
+        return String.fromCharCode(code);
+      };
+      const nameLength = random1To(MAX_NAME_LENGTH);
+      const fakeName = await Promise.all(
+        Array.from({ length: nameLength }, async () => await genRandomChar()),
+      );
+      return fakeName.join("") || FALLBACK_NAME;
+    } catch (err) {
+      console.error(appError("Failed to generated random name:", err));
+      return FALLBACK_NAME;
     }
-    return rndName;
   }
 
-  // Async operations
   async function getRandomFullName() {
     const MAX_NAME_PARTS = 3;
-    const parts = await Promise.all(
-      Array.from(
-        { length: random1To(MAX_NAME_PARTS) },
-        async () => await withTimeout(getRandomName(), 2000),
+    const parts = await withTimeout(
+      await Promise.all(
+        Array.from(
+          { length: random1To(MAX_NAME_PARTS) },
+          async () => await getRandomName(),
+        ),
+      ).catch((err) =>
+        console.error(appError("Failed to get random full name", err)),
       ),
+      1000,
     );
+
     return parts.join(" ").capitalize();
   }
 
   async function getRandomNames(count) {
-    const names = await Promise.all(
-      Array.from({ length: count }, async () => {
-        try {
-          return await withTimeout(getRandomFullName(), 2000);
-        } catch {
-          return "rndname"; // fallback
-        }
+    return await withTimeout(
+      await Promise.all(
+        Array.from({ length: count }, async () => await getRandomFullName()),
+      ).catch((err) => {
+        console.error(appError("Fail fetching names", err));
+        return Array(count).fill("Rand Fall Back");
       }),
+      1000,
     );
-    return names;
   }
 
   async function setupStyles() {
@@ -198,16 +209,14 @@
       articleHeading,
       guestListRoot,
     );
-
     document.body.appendChild(guestArticle);
-
     return { guestListRoot };
   }
 
-  async function renderGuestList(guestList, guestListRoot) {
+  async function renderGuestList(guestListRoot, guestList) {
     for (const name of guestList.slice().sort((a, b) => a.localeCompare(b))) {
       try {
-        const li = await withTimeout(createElement("li", {}, name), 2000);
+        const li = await withTimeout(createElement("li", {}, name), 1000);
         guestListRoot.appendChild(li);
       } catch (err) {
         throw appError(`Failed to render guest: ${name}.`, err);
@@ -220,7 +229,7 @@
         new Promise((resolve) =>
           resolve(prompt("Enter the number of participants:")?.trim()),
         ),
-        30000,
+        20000,
       );
       const result = parseInt(input, 10);
       if (Number.isInteger(result) && result > 0) return result;
@@ -231,56 +240,52 @@
   }
 
   async function getGuestName(promptStr) {
-    const MAX_ATTEMPTS = 5;
-    for (let i = 0; i < MAX_ATTEMPTS; i++) {
-      try {
+    try {
+      const MAX_ATTEMPTS = 5;
+      for (let i = 0; i <= MAX_ATTEMPTS; i++) {
         const result = await withTimeout(
           new Promise((resolve) => resolve(prompt(promptStr)?.trim())),
-          30000,
+          5000,
         );
         if (result) return result.capitalize();
         alert("Name cannot be empty.");
-      } catch (err) {
-        throw appError("Too many attempts or timeout.", err);
       }
+    } catch (err) {
+      throw appError("Too many attempts or timeout.");
     }
   }
 
   async function getGuestList() {
-    const guestCount = await getGuestCount();
+    try {
+      // false = prompt names | true = autogenerate
+      const isDebug = true;
+      const guestCount = await getGuestCount();
 
-    // false = prompted names | true = autogenerated names
-    const isDebug = true;
-
-    if (isDebug) {
-      const guestList = await getRandomNames(guestCount);
+      const guestList = isDebug
+        ? await getRandomNames(guestCount)
+        : await Promise.all(
+            Array.from(
+              { length: guestCount },
+              async (_, i) =>
+                await getGuestName(
+                  `Enter the name of participant number (${i + 1}):`,
+                ),
+            ),
+          );
       return { guestList };
+    } catch (err) {
+      throw appError("Failed to create guest list:", err);
     }
-
-    const guestList = await Promise.all(
-      Array.from({ length: guestCount }, (_, i) =>
-        withTimeout(
-          getGuestName(`Enter the name of participant number (${i + 1}):`),
-          2000,
-        ),
-      ),
-    );
-
-    return { guestList };
   }
 
   // Main level
   async function main() {
-    try {
-      await setupStyles();
-      const { guestListRoot } = await createUI();
-      const { guestList } = await getGuestList();
-      await renderGuestList(guestList, guestListRoot);
-    } catch (err) {
-      throw err;
-    }
+    await Promise.all([setupStyles(), createUI(), getGuestList()]).then(
+      async ([_, { guestListRoot }, { guestList }]) => {
+        await renderGuestList(guestListRoot, guestList);
+      },
+    );
   }
-
   main().catch((err) => {
     console.error("Fatal", err);
   });
