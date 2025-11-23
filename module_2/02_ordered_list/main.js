@@ -297,7 +297,7 @@
   async function getGuestList() {
     try {
       // false = prompt names | true = autogenerate
-      const isDebug = true;
+      const isDebug = false;
       const guestCount = await getGuestCount();
 
       const guestList = isDebug
