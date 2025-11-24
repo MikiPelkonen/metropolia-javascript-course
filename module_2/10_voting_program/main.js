@@ -1,7 +1,5 @@
 "use strict";
 
-const timeout = (ms) => new Promise((res) => setTimeout(res(), ms));
-
 function promptNumber(promptMsg) {
   let rawInput;
   let result;
