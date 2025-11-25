@@ -3,100 +3,266 @@
 const calculation = document.getElementById("calculation");
 const startBtn = document.getElementById("start");
 const resultParagraph = document.getElementById("result");
+const alertParagraph = document.getElementById("alert");
+const tokensParagraph = document.getElementById("tokens");
 
-function parseOperation(calculation) {
-  // Regex match
-  // ints + floats: \d*\.?\d+
-  // signs: [+\-*/]
+// Turn input string like "1+3.5-2*20/30" => [1,"+",3.5,"-",2,"*",20,"/",30]
+function parseTokens(calculation) {
+  // Regex match >> signs: [+\-*/] numbers: \d*\.?\d+
   return calculation
     .match(/(\d*\.?\d+|[+\-*/])/g)
     .map((op) => (isNaN(op) ? op : parseFloat(op)));
 }
 
-const validSigns = ["+", "-", "/", "*"];
+const OperatorFlags = {
+  SUM: 1 << 0, // operators + and -
+  PROD: 1 << 1, // operators * and /
+};
+// Allowed operators and freeze runtime mutability
+const Operators = Object.freeze({
+  ADD: { token: "+", flag: OperatorFlags.SUM },
+  SUB: { token: "-", flag: OperatorFlags.SUM },
+  MUL: { token: "*", flag: OperatorFlags.PROD },
+  DIV: { token: "/", flag: OperatorFlags.PROD },
+});
 
-function validateOperations(operations) {
-  for (let i = 0; i < operations.length; i++) {
-    if (i % 2 === 0) {
-      if (isNaN(operations[i])) return false;
-    } else {
-      if (!validSigns.some((sign) => sign === operations[i])) return false;
-    }
-  }
-  return true;
+const AllowedOperators = new Set(
+  Object.values(Operators).map((op) => op.token),
+);
+
+// Precompute flagged groups and freeze ^
+const OperatorsByFlag = Object.freeze({
+  [OperatorFlags.SUM]: new Set(
+    Object.values(Operators)
+      .filter((op) => op.flag === OperatorFlags.SUM)
+      .map((op) => op.token),
+  ),
+  [OperatorFlags.PROD]: new Set(
+    Object.values(Operators)
+      .filter((op) => op.flag === OperatorFlags.PROD)
+      .map((op) => op.token),
+  ),
+});
+
+const OperatorMap = Object.freeze(
+  Object.fromEntries(Object.values(Operators).map((op) => [op.token, op])),
+);
+
+function matchTokenTypes(flag = null, ...tokens) {
+  const set = flag ? OperatorsByFlag[flag] : AllowedOperators;
+  return tokens.every((token) => set.has(token));
 }
 
-function* calculator() {
-  while (true) {
-    const received = yield {
-      type: "ready",
-      message: "waiting for operations",
-    };
+// Check numbers and signs in correct order/syntax
+function validateOperations(tokens) {
+  if (!Array.isArray(tokens) || tokens.length === 0) return false;
+  // Fail if first and last value is not a number
+  if (isNaN(tokens[0]) || isNaN(tokens[tokens.length - 1])) return false;
 
-    const operations = Array.isArray(received) ? [...received] : [];
+  for (let i = 0; i < tokens.length; i++) {
+    const token = tokens[i];
+    switch (i % 2) {
+      case 0: // needs to be a number (int or float)
+        if (isNaN(token)) return false;
+        break;
 
-    if (!operations.length) continue;
-    yield { type: "ops:", value: operations.slice().join(" ") };
+      case 1: // needs to be an operator
+        if (!matchTokenTypes(null, token)) return false;
+        // no double operators
+        if (isNaN(tokens[i - 1])) return false;
+        break;
+    }
+  }
+  return true; // Validation passed
+}
 
-    let stack = [];
-    let opCount = 1;
+const CalculatorState = Object.freeze({
+  READY: "ready",
+  PROD_OPERATIONS: "prod_operations",
+  SUM_OPERATIONS: "sum_operations",
+  SNAPSHOT: "snapshot",
+  RESULT: "result",
+});
 
-    for (let i = 0; i < operations.length; i++) {
-      const op = operations[i];
-      if (op === "*" || op === "/") {
-        const previous = stack.pop();
-        const next = operations[i + 1];
-        const result = op === "*" ? previous * next : previous / next;
-        yield {
-          type: `${opCount}. op:`,
-          value: `${previous} ${op} ${next} = ${result}`,
+// Generator func that runs the operations step by step
+function* calculator(power = true) {
+  let state = CalculatorState.READY;
+  let tokens = [];
+  while (power) {
+    switch (state) {
+      case CalculatorState.READY: {
+        // Wait for operations e.g. [1,"+",2,"-",10.5]
+        const received = yield {
+          state: CalculatorState.READY,
+          message: "waiting for operations",
         };
-        stack.push(result);
-        i++;
-        opCount++;
-      } else {
-        stack.push(op);
+        tokens = Array.isArray(received) ? [...received] : [];
+        if (!tokens.length) break;
+        state = CalculatorState.PROD_OPERATIONS;
+        yield {
+          state: CalculatorState.SNAPSHOT,
+          tokens: [...tokens],
+          operation: null,
+          highlight: null,
+        };
+        break;
       }
+      case CalculatorState.PROD_OPERATIONS: {
+        let operatorFound = false;
+        // Loop through every operator position (odd indexes)
+        for (let i = 1; i < tokens.length; i += 2) {
+          const curOperator = tokens[i];
+          if (matchTokenTypes(OperatorFlags.PROD, curOperator)) {
+            // Remove [num, operator, num] from tokens e.g.[10, "*", 15]
+            const [a, , b] = tokens.splice(i - 1, 3);
+            const operator = OperatorMap[curOperator];
+            // Calculate result
+            const result =
+              operator.token === Operators.MUL.token ? a * b : a / b;
+            // Insert result back to same position
+            tokens.splice(i - 1, 0, result);
+            // Yield snapshot and operation to render
+            const idx = i;
+            yield {
+              state: CalculatorState.SNAPSHOT,
+              tokens: [...tokens],
+              operation: `${a} ${operator.token} ${b} = ${result}`,
+              highlight: [idx - 1, idx, idx + 1],
+            };
+            operatorFound = true;
+            break; // Back to index 1 after every operation
+          }
+        }
+        state = operatorFound
+          ? CalculatorState.PROD_OPERATIONS
+          : CalculatorState.SUM_OPERATIONS;
+        break;
+      }
+      case CalculatorState.SUM_OPERATIONS: {
+        let operatorFound = false;
+        for (let i = 1; i < tokens.length; i += 2) {
+          const curOperator = tokens[i];
+          const idx = i;
+          if (matchTokenTypes(OperatorFlags.SUM, curOperator)) {
+            const [a, , b] = tokens.splice(i - 1, 3);
+            const operator = OperatorMap[curOperator];
+            const result =
+              operator.token === Operators.ADD.token ? a + b : a - b;
+            tokens.splice(i - 1, 0, result);
+            // Yield snapshot and operation to render
+            const idx = i;
+            yield {
+              state: CalculatorState.SNAPSHOT,
+              tokens: [...tokens],
+              operation: `${a} ${operator.token} ${b} = ${result}`,
+              highlight: [idx - 1, idx, idx + 1],
+            };
+            operatorFound = true;
+            break; // Back to index 1 after every operation
+          }
+        }
+        state = operatorFound
+          ? CalculatorState.SUM_OPERATIONS
+          : CalculatorState.RESULT;
+        break;
+      }
+      case CalculatorState.RESULT: {
+        // Render final result
+        yield {
+          state: CalculatorState.RESULT,
+          tokens: [...tokens],
+          result: tokens[0],
+          highlight: [0],
+        };
+        state = CalculatorState.READY;
+        break;
+      }
+      default:
+        state = CalculatorState.READY;
     }
-
-    yield {
-      type: "remaining",
-      value: stack,
-    };
-    let calcResult = stack[0];
-    for (let i = 1; i < stack.length; i += 2) {
-      const op = stack[i];
-      const num = stack[i + 1];
-      yield {
-        type: `${opCount}. op:`,
-        value: `${calcResult} ${op} ${num}`,
-      };
-      calcResult = op === "+" ? calcResult + num : calcResult - num;
-      opCount++;
-    }
-    // Final
-    yield { type: "result", value: calcResult };
   }
 }
 
-const calcGen = calculator();
-calcGen.next();
+const tokenStyles = `
+  font-family: system-ui;
+  border: 1px solid black;
+  padding: 0.25rem;
+  margin: 0.25rem;
+  display: inline-block;
+`.trim();
 
-const onStart = (evt) => {
+function showSnapShot(tokens) {
+  tokensParagraph.innerHTML = "";
+  return tokens.forEach((token, i) => {
+    const idx = i;
+    const span = document.createElement("span");
+    span.innerText = token;
+    span.dataset.index = idx;
+    span.style.cssText = tokenStyles;
+    tokensParagraph.appendChild(span);
+  });
+}
+function highlightTokens(indices) {
+  indices.forEach((idx) => {
+    const el = tokensParagraph.querySelector(`[data-index="${idx}"]`);
+    if (!el) return;
+
+    el.style.transition = "transform 0.3s ease, background 0.2s ease";
+    el.style.transform = "scale(1.2) translateY(8px)";
+    el.style.background = "yellow";
+
+    setTimeout(() => {
+      el.style.transform = "scale(1)";
+      el.style.background = "";
+    }, 280);
+  });
+}
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function runCalculator(ops) {
+  const calc = calculator();
+  calc.next(); // activate calculator => wait for operations
+  let step = calc.next(ops);
+
+  while (
+    step.value !== undefined &&
+    step.value.state !== CalculatorState.READY
+  ) {
+    const s = step.value.state;
+    if (s === CalculatorState.SNAPSHOT) {
+      showSnapShot(step.value.tokens);
+      if (step.value.highlight) {
+        await sleep(40);
+        highlightTokens(step.value.highlight);
+      }
+      if (step.value.operation) {
+        resultParagraph.innerText += step.value.operation + "\n";
+      }
+      await sleep(400);
+    } else if (s === CalculatorState.RESULT) {
+      // final result
+      resultParagraph.innerText += step.value.result + "\n";
+    }
+    step = calc.next();
+  }
+}
+
+const onStart = async (evt) => {
   evt.preventDefault();
-  const ops = parseOperation(calculation.value);
+
+  // Parse user input
+  const ops = parseTokens(calculation.value);
+  // Run validation
   if (!validateOperations(ops)) {
-    alert("Validation error on operation stack.");
+    alertParagraph.innerText =
+      "Validation error.\nEnter operations in format: [num][operator]...[num]";
     return;
   }
-
+  // Clear texts
+  alertParagraph.innerText = "";
   resultParagraph.innerText = "";
-
-  let step = calcGen.next(ops);
-  while (step.value !== undefined && step.value.type !== "ready") {
-    resultParagraph.innerText +=
-      `${step.value.type} ${step.value.value}` + "\n";
-    step = calcGen.next();
-  }
+  // Run calculator with fake sleep effect
+  await runCalculator(ops);
 };
 startBtn.addEventListener("click", onStart);
