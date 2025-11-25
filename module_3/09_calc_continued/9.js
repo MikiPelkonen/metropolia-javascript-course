@@ -28,12 +28,18 @@ function validateOperations(operations) {
 
 function* calculator() {
   while (true) {
-    const operations = yield;
+    const received = yield {
+      type: "ready",
+      message: "waiting for operations",
+    };
 
-    if (!operations || !operations.length) continue;
-    yield operations;
+    const operations = Array.isArray(received) ? [...received] : [];
+
+    if (!operations.length) continue;
+    yield { type: "ops:", value: operations.slice().join(" ") };
 
     let stack = [];
+    let opCount = 1;
 
     for (let i = 0; i < operations.length; i++) {
       const op = operations[i];
@@ -41,23 +47,35 @@ function* calculator() {
         const previous = stack.pop();
         const next = operations[i + 1];
         const result = op === "*" ? previous * next : previous / next;
-        yield `>> ${previous} ${op} ${next} = ${result}`;
+        yield {
+          type: `${opCount}. op:`,
+          value: `${previous} ${op} ${next} = ${result}`,
+        };
         stack.push(result);
         i++;
+        opCount++;
       } else {
         stack.push(op);
       }
     }
 
+    yield {
+      type: "remaining",
+      value: stack,
+    };
     let calcResult = stack[0];
     for (let i = 1; i < stack.length; i += 2) {
       const op = stack[i];
       const num = stack[i + 1];
-      yield `>> ${calcResult} ${op} ${num}`;
+      yield {
+        type: `${opCount}. op:`,
+        value: `${calcResult} ${op} ${num}`,
+      };
       calcResult = op === "+" ? calcResult + num : calcResult - num;
+      opCount++;
     }
     // Final
-    yield calcResult;
+    yield { type: "result", value: calcResult };
   }
 }
 
@@ -75,8 +93,9 @@ const onStart = (evt) => {
   resultParagraph.innerText = "";
 
   let step = calcGen.next(ops);
-  while (step.value !== undefined) {
-    resultParagraph.innerText += step.value + "\n";
+  while (step.value !== undefined && step.value.type !== "ready") {
+    resultParagraph.innerText +=
+      `${step.value.type} ${step.value.value}` + "\n";
     step = calcGen.next();
   }
 };
