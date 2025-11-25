@@ -2,57 +2,82 @@
 
 const calculation = document.getElementById("calculation");
 const startBtn = document.getElementById("start");
-const resultP = document.getElementById("result");
+const resultParagraph = document.getElementById("result");
 
 function parseOperation(calculation) {
+  // Regex match
+  // ints + floats: \d*\.?\d+
+  // signs: [+\-*/]
   return calculation
     .match(/(\d*\.?\d+|[+\-*/])/g)
     .map((op) => (isNaN(op) ? op : parseFloat(op)));
 }
 
-function* calculator() {
-  const input = calculation.value;
-  const operations = parseOperation(input);
-  yield operations;
-  let stack = [];
-  for (let i = 0; i < operations.length; i++) {
-    const op = operations[i];
-    if (op === "*" || op === "/") {
-      const previous = stack.pop();
-      const next = operations[i + 1];
-      const result = op === "*" ? previous * next : next / previous;
-      stack.push(result);
-      i++;
-      yield [previous, op, next];
-    } else {
-      stack.push(op);
-    }
-    yield stack;
-  }
+const validSigns = ["+", "-", "/", "*"];
 
-  let calcResult = stack[0];
-  for (let i = 1; i < stack.length; i += 2) {
-    const op = stack[i];
-    const num = stack[i + 1];
-    if (op === "+") {
-      calcResult += num;
-    } else if (op === "-") {
-      calcResult -= num;
+function validateOperations(operations) {
+  for (let i = 0; i < operations.length; i++) {
+    if (i % 2 === 0) {
+      if (isNaN(operations[i])) return false;
+    } else {
+      if (!validSigns.some((sign) => sign === operations[i])) return false;
     }
+  }
+  return true;
+}
+
+function* calculator() {
+  while (true) {
+    const operations = yield;
+
+    if (!operations || !operations.length) continue;
+    yield operations;
+
+    let stack = [];
+
+    for (let i = 0; i < operations.length; i++) {
+      const op = operations[i];
+      if (op === "*" || op === "/") {
+        const previous = stack.pop();
+        const next = operations[i + 1];
+        const result = op === "*" ? previous * next : previous / next;
+        yield `>> ${previous} ${op} ${next} = ${result}`;
+        stack.push(result);
+        i++;
+      } else {
+        stack.push(op);
+      }
+    }
+
+    let calcResult = stack[0];
+    for (let i = 1; i < stack.length; i += 2) {
+      const op = stack[i];
+      const num = stack[i + 1];
+      yield `>> ${calcResult} ${op} ${num}`;
+      calcResult = op === "+" ? calcResult + num : calcResult - num;
+    }
+    // Final
     yield calcResult;
   }
-
-  yield calcResult;
 }
 
 const calcGen = calculator();
+calcGen.next();
 
 const onStart = (evt) => {
   evt.preventDefault();
-  let result;
-  while (!(result = calcGen.next()).done) {
-    console.log(`Result:${result.value}`);
-    resultP.innerText += result.value + "\n";
+  const ops = parseOperation(calculation.value);
+  if (!validateOperations(ops)) {
+    alert("Validation error on operation stack.");
+    return;
+  }
+
+  resultParagraph.innerText = "";
+
+  let step = calcGen.next(ops);
+  while (step.value !== undefined) {
+    resultParagraph.innerText += step.value + "\n";
+    step = calcGen.next();
   }
 };
-startBtn.onclick = onStart;
+startBtn.addEventListener("click", onStart);
