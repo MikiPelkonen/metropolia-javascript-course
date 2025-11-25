@@ -1,10 +1,23 @@
 "use strict";
 
+document.body.style.cssText = `
+      display: flex;
+      flex-direction: column;
+      place-items: center;
+      min-height: 100vh;
+      min-width: 320px;
+      padding: 2rem;
+    `;
+
+const alertParagraph = document.createElement("p");
+alertParagraph.id = "alert";
+const tokensParagraph = document.createElement("p");
+tokensParagraph.id = "tokens";
+
 const calculation = document.getElementById("calculation");
 const startBtn = document.getElementById("start");
 const resultParagraph = document.getElementById("result");
-const alertParagraph = document.getElementById("alert");
-const tokensParagraph = document.getElementById("tokens");
+document.body.append(alertParagraph, tokensParagraph);
 
 // Turn input string like "1+3.5-2*20/30" => [1,"+",3.5,"-",2,"*",20,"/",30]
 function parseTokens(calculation) {
@@ -207,14 +220,14 @@ function highlightTokens(indices) {
     const el = tokensParagraph.querySelector(`[data-index="${idx}"]`);
     if (!el) return;
 
-    el.style.transition = "transform 0.3s ease, background 0.2s ease";
-    el.style.transform = "scale(1.2) translateY(8px)";
+    el.style.transition = "transform 0.2s ease, background 0.2s ease";
+    el.style.transform = "scale(1.3) translateY(4px)";
     el.style.background = "yellow";
 
     setTimeout(() => {
       el.style.transform = "scale(1)";
       el.style.background = "";
-    }, 280);
+    }, 120);
   });
 }
 
@@ -239,7 +252,7 @@ async function runCalculator(ops) {
       if (step.value.operation) {
         resultParagraph.innerText += step.value.operation + "\n";
       }
-      await sleep(400);
+      await sleep(300);
     } else if (s === CalculatorState.RESULT) {
       // final result
       resultParagraph.innerText += step.value.result + "\n";
