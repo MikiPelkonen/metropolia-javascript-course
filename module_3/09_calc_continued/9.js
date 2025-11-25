@@ -7,6 +7,12 @@ document.body.style.cssText = `
       min-height: 100vh;
       min-width: 320px;
       padding: 2rem;
+      width: 100%;
+      margin: 0 auto;
+      text-align: center;
+      font-family: system-ui, 'sans-serif';
+      font-size: 20px;
+      line-height: 1.2;
     `;
 
 const alertParagraph = document.createElement("p");
@@ -15,8 +21,33 @@ const tokensParagraph = document.createElement("p");
 tokensParagraph.id = "tokens";
 
 const calculation = document.getElementById("calculation");
+calculation.style.cssText = `
+      display: flex;
+      width: 420px;
+      height: 50px;
+      text-align: center;
+      padding: 0;
+      margin: 0;
+      font-size: 1.1rem;
+    `;
+
 const startBtn = document.getElementById("start");
+startBtn.style.cssText = `
+      display: flex;
+      margin-top: 1rem;
+      padding: 1rem 3rem;
+      text-align: center;
+      font-size: 1.1rem;
+    `;
+
 const resultParagraph = document.getElementById("result");
+resultParagraph.style.cssText = `
+      display: flex;
+      margin-top: 1rem;
+      padding: 1rem 3rem;
+      text-align: center;
+      font-size: 1.4rem;
+    `;
 document.body.append(alertParagraph, tokensParagraph);
 
 // Turn input string like "1+3.5-2*20/30" => [1,"+",3.5,"-",2,"*",20,"/",30]
@@ -155,7 +186,6 @@ function* calculator(power = true) {
         let operatorFound = false;
         for (let i = 1; i < tokens.length; i += 2) {
           const curOperator = tokens[i];
-          const idx = i;
           if (matchTokenTypes(OperatorFlags.SUM, curOperator)) {
             const [a, , b] = tokens.splice(i - 1, 3);
             const operator = OperatorMap[curOperator];
