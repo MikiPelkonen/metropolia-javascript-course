@@ -7,19 +7,26 @@ document.body.style.cssText = `
       min-height: 100vh;
       min-width: 320px;
       padding: 2rem;
-      width: 100%;
       margin: 0 auto;
       text-align: center;
       font-family: system-ui, 'sans-serif';
-      font-size: 20px;
-      line-height: 1.2;
+      font-size: 1rem;
+      line-height: 1.1;
     `;
 
 const alertParagraph = document.createElement("p");
 alertParagraph.id = "alert";
 const tokensParagraph = document.createElement("p");
 tokensParagraph.id = "tokens";
-
+tokensParagraph.style.cssText = `
+      display: flex;
+      aling-items: center;
+      justify-content: center;
+      place-items: center;
+      gap: 1rem;
+      width: 100%;
+      height: auto;
+    `;
 const calculation = document.getElementById("calculation");
 calculation.style.cssText = `
       display: flex;
@@ -46,7 +53,6 @@ resultParagraph.style.cssText = `
       margin-top: 1rem;
       padding: 1rem 3rem;
       text-align: center;
-      font-size: 1.4rem;
     `;
 document.body.append(alertParagraph, tokensParagraph);
 
@@ -193,12 +199,11 @@ function* calculator(power = true) {
               operator.token === Operators.ADD.token ? a + b : a - b;
             tokens.splice(i - 1, 0, result);
             // Yield snapshot and operation to render
-            const idx = i;
             yield {
               state: CalculatorState.SNAPSHOT,
               tokens: [...tokens],
               operation: `${a} ${operator.token} ${b} = ${result}`,
-              highlight: [idx - 1, idx, idx + 1],
+              highlight: [i - 1, i, i + 1],
             };
             operatorFound = true;
             break; // Back to index 1 after every operation
@@ -229,9 +234,10 @@ function* calculator(power = true) {
 const tokenStyles = `
   font-family: system-ui;
   border: 1px solid black;
-  padding: 0.25rem;
+  padding: 0.5rem;
   margin: 0.25rem;
   display: inline-block;
+  border-radius: 0.25rem;
 `.trim();
 
 function showSnapShot(tokens) {
