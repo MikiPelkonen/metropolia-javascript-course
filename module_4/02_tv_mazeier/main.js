@@ -1,10 +1,10 @@
 "use strict";
 
-document.addEventListener("DOMContentLoaded", async () => {
+document.addEventListener("DOMContentLoaded", () => {
   // Html & Head
   const cosmos = new smol.Cosmos({
     name: "Module 4",
-    title: "01_tv_maze",
+    title: "02_tv_mazeier",
     debug: false,
   });
   // Body
@@ -16,7 +16,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const headerIsland = new smol.Island();
   const titleTree = new smol.Tree();
   const headingBranch = new smol.Branch();
-
   headingBranch.addLeaf(new smol.Leaf({ tag: "h1", text: cosmos.name }));
   headingBranch.addLeaf(new smol.Leaf({ tag: "p", text: cosmos.title }));
   titleTree.addBranch(headingBranch);
@@ -33,17 +32,36 @@ document.addEventListener("DOMContentLoaded", async () => {
   const formBranch = new smol.Branch({ tag: "form" });
   formBranch.el.action = "https://api.tvmaze.com/search/shows";
   formBranch.el.method = "GET";
-
   // Form inputs
   const queryInput = new smol.Leaf({ tag: "input" });
   queryInput.el.type = "text";
   queryInput.el.id = "query";
   queryInput.el.name = "q";
   queryInput.el.placeholder = "Search for tv shows...";
-
   const submitInput = new smol.Leaf({ tag: "input" });
   submitInput.el.type = "submit";
   submitInput.el.value = "Search";
+
+  // Form fetch
+  formBranch.el.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    submitInput.el.disabled = true;
+    submitInput.el.value = "Searching...";
+    const spark = new smol.Spark({
+      baseURL: "https://api.tvmaze.com/search/shows",
+      debug: true,
+      useProxy: true,
+    });
+    const query = queryInput.el.value.trim();
+    if (query) {
+      const response = await spark.get(`?q=${encodeURIComponent(query)}`);
+      console.log(response);
+    }
+    setTimeout(() => {
+      submitInput.el.disabled = false;
+      submitInput.el.value = "Search";
+    }, 500);
+  });
 
   formBranch.addLeaf(queryInput);
   formBranch.addLeaf(submitInput);

@@ -1,0 +1,84 @@
+::-webkit-scrollbar {
+  display: none;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+#app {
+  text-align: center;
+}
+#mainContent {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.header {
+  width: 100%;
+}
+
+.main {
+  padding: 0.25rem;
+  flex-grow: 1;
+  width: 100%;
+  display: flex;
+  gap: 4rem;
+  flex-direction: column;
+  align-items: center;
+}
+
+.formContainer {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  margin: 0 auto;
+  justify-content: center;
+}
+
+.chuckForm {
+  width: 24rem;
+  height: 8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.formInput {
+  padding: 0.5rem 0.25rem;
+  border-radius: inherit;
+}
+
+#jokeContainer {
+  width: 100%;
+  flex-grow: 1;
+  padding: 1rem;
+  margin: 0;
+  border-radius: 0.5rem;
+}
+
+#jokes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-auto-rows: 240px;
+  width: 100%;
+  max-width: 800px;
+  gap: 1rem;
+  border-radius: inherit;
+}
+
+.joke {
+  margin: 0 auto;
+  width: 100%;
+  height: 100%;
+  padding: 1rem;
+  display: inline-block;
+  background-color: var(--smol-surface);
+  border-radius: inherit;
+  overflow-y: auto;
+  text-align: left;
+}

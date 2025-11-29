@@ -1,35 +1,5 @@
 "use strict";
 
-const OperatorFlags = {
-  SUM: 1 << 0, // operators + and -
-  PROD: 1 << 1, // operators * and /
-};
-// Allowed operators and freeze runtime mutability
-const Operators = Object.freeze({
-  ADD: { token: "+", flag: OperatorFlags.SUM },
-  SUB: { token: "-", flag: OperatorFlags.SUM },
-  MUL: { token: "*", flag: OperatorFlags.PROD },
-  DIV: { token: "/", flag: OperatorFlags.PROD },
-});
-
-const TokenColors = Object.freeze({
-  DEFAULT: "#F2E9E4", // soft rose-gray
-  PROD: "#C9D6FF", // cool soft periwinkle (× and ÷ group)
-  SUM: "#F7C59F", // warm peach ( + and - group )
-  RESULT: "#B5E8A8", // fresh green highlight
-  READY: "#FFE8A3", // warm light gold
-  ADD: "#FFB386", // bright peach
-  SUB: "#7FD1C8", // mint-turquoise
-  MULTI: "#D6B4FE", // lavender-violet
-  DIV: "#FF9BA7", // rose-pink
-});
-const OperatorColorMap = Object.freeze({
-  "+": TokenColors.ADD,
-  "-": TokenColors.SUB,
-  "*": TokenColors.MULTI,
-  "/": TokenColors.DIV,
-});
-
 document.body.style.cssText = `
       display: flex;
       flex-direction: column;
@@ -54,6 +24,59 @@ document.querySelector("h1").style.cssText = `
     text-shadow: 0 1px 2px black;
     `.trim();
 
+const OperatorFlags = {
+  SUM: 1 << 0, // operators + and -
+  PROD: 1 << 1, // operators * and /
+};
+// Allowed operators and freeze runtime mutability
+const Operators = Object.freeze({
+  ADD: { token: "+", flag: OperatorFlags.SUM },
+  SUB: { token: "-", flag: OperatorFlags.SUM },
+  MUL: { token: "*", flag: OperatorFlags.PROD },
+  DIV: { token: "/", flag: OperatorFlags.PROD },
+});
+
+const TokenColors = Object.freeze({
+  DEFAULT: "#F2E9E4", // soft rose-gray
+  PROD: "#C9D6FF", // cool soft periwinkle (× and ÷ group)
+  SUM: "#F7C59F", // warm peach ( + and - group )
+  RESULT: "#B5E8A8", // fresh green highlight
+  READY: "#FFE8A3", // warm light gold
+  ADD: "#FFB386", // bright peach
+  SUB: "#7FD1C8", // mint-turquoise
+  MULTI: "#D6B4FE", // lavender-violet
+  DIV: "#FF9BA7", // rose-pink
+});
+
+const OperatorColorMap = Object.freeze({
+  "+": TokenColors.ADD,
+  "-": TokenColors.SUB,
+  "*": TokenColors.MULTI,
+  "/": TokenColors.DIV,
+});
+
+const AllowedOperators = new Set(
+  Object.values(Operators).map((op) => op.token),
+);
+
+// Precompute flagged groups and freeze ^
+const OperatorsByFlag = Object.freeze({
+  [OperatorFlags.SUM]: new Set(
+    Object.values(Operators)
+      .filter((op) => op.flag === OperatorFlags.SUM)
+      .map((op) => op.token),
+  ),
+  [OperatorFlags.PROD]: new Set(
+    Object.values(Operators)
+      .filter((op) => op.flag === OperatorFlags.PROD)
+      .map((op) => op.token),
+  ),
+});
+
+const OperatorMap = Object.freeze(
+  Object.fromEntries(Object.values(Operators).map((op) => [op.token, op])),
+);
+
 const stateParagraph = document.getElementById("state");
 stateParagraph.style.cssText = `
     position: absolute;
@@ -71,6 +94,7 @@ stateParagraph.style.cssText = `
     background: rgba(22,22,22,0.7);
     font-size: 0.65rem;
     `.trim();
+
 const alertParagraph = document.createElement("p");
 alertParagraph.id = "alert";
 alertParagraph.style.cssText = `
@@ -186,19 +210,11 @@ const tokenStyles = `
   background: mintcream;
   border-radius: 0.15rem;
   box-shadow: 0 1px 4px rgba(22,22,22,0.4);
-  transition: transform 0.2s ease, background 0.2s ease;
+  transition: transform 0.2s ease-in-out, background 0.15s ease-in;
 `.trim();
 
 calcBase.appendChild(alertParagraph);
-calcScreen.append(tokensParagraph);
-
-// Turn input string like "1+3.5-2*20/30" => [1,"+",3.5,"-",2,"*",20,"/",30]
-function parseTokens(calculation) {
-  // Regex match >> signs: [+\-*/] numbers: \d*\.?\d+
-  return calculation
-    .match(/(\d*\.?\d+|[+\-*/])/g)
-    .map((op) => (isNaN(op) ? op : parseFloat(op)));
-}
+calcScreen.appendChild(tokensParagraph);
 
 const opElRoot = document.getElementById("ops");
 opElRoot.style.cssText = `
@@ -235,27 +251,13 @@ for (const [operator, color] of Object.entries(OperatorColorMap)) {
   opElRoot.append(opEl);
 }
 
-const AllowedOperators = new Set(
-  Object.values(Operators).map((op) => op.token),
-);
-
-// Precompute flagged groups and freeze ^
-const OperatorsByFlag = Object.freeze({
-  [OperatorFlags.SUM]: new Set(
-    Object.values(Operators)
-      .filter((op) => op.flag === OperatorFlags.SUM)
-      .map((op) => op.token),
-  ),
-  [OperatorFlags.PROD]: new Set(
-    Object.values(Operators)
-      .filter((op) => op.flag === OperatorFlags.PROD)
-      .map((op) => op.token),
-  ),
-});
-
-const OperatorMap = Object.freeze(
-  Object.fromEntries(Object.values(Operators).map((op) => [op.token, op])),
-);
+// Turn input string like "1+3.5-2*20/30" => [1,"+",3.5,"-",2,"*",20,"/",30]
+function parseTokens(calculation) {
+  // Regex match >> signs: [+\-*/] numbers: \d*\.?\d+
+  return calculation
+    .match(/(\d*\.?\d+|[+\-*/])/g)
+    .map((op) => (isNaN(op) ? op : parseFloat(op)));
+}
 
 function matchTokenTypes(flag = null, ...tokens) {
   const set = flag ? OperatorsByFlag[flag] : AllowedOperators;
@@ -282,13 +284,14 @@ function validateOperations(tokens) {
         break;
     }
   }
-  return true; // Validation passed
+  return true; // Validation pass
 }
 
 const CalculatorState = Object.freeze({
-  READY: "Waiting for operations...",
-  PROD_OPERATIONS: " Running * and / operations...",
-  SUM_OPERATIONS: "Running + and - operations...",
+  ON: "smol <(^^,)>",
+  READY: "Standing by...",
+  PROD_OPERATIONS: "Multiply & Divide",
+  SUM_OPERATIONS: "Additive",
   SNAPSHOT: "snapshot",
   RESULT: "Final result",
 });
@@ -301,7 +304,7 @@ function changeState(state, color) {
 
 // Generator func that runs the operations step by step
 function* calculator(power = true) {
-  let state = changeState(CalculatorState.READY);
+  let state = changeState(CalculatorState.READY, TokenColors.READY);
   let tokens = [];
   while (power) {
     switch (state) {
@@ -397,7 +400,7 @@ function* calculator(power = true) {
           state: CalculatorState.RESULT,
           tokens: [...tokens],
           result: tokens[0],
-          highlight: [0],
+          highlight: null,
           color: TokenColors.RESULT,
         };
         state = changeState(CalculatorState.READY, TokenColors.READY);
@@ -434,19 +437,18 @@ function highlightTokens(indices, fallbackColor, operator) {
     const el = tokensParagraph.querySelector(`[data-index="${idx}"]`);
     if (!el) return;
 
-    el.style.transform = "scale(1.3) translateY(-20px)";
+    el.style.transform = "scale(1.25) scaleX(0.65) translateY(-20px)";
     el.style.background = color;
 
     setTimeout(() => {
       el.style.transform = "scale(1)";
-    }, 150);
+    }, 190);
   });
 }
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 async function runCalculator(ops) {
-  const calc = calculator();
   calc.next(); // activate calculator => wait for operations
   let step = calc.next(ops);
 
@@ -458,7 +460,7 @@ async function runCalculator(ops) {
     if (s === CalculatorState.SNAPSHOT) {
       showSnapShot(step.value.tokens);
       if (step.value.highlight) {
-        await sleep(20);
+        await sleep(40);
         highlightTokens(
           step.value.highlight,
           step.value.color,
@@ -468,14 +470,16 @@ async function runCalculator(ops) {
       if (step.value.operation) {
         resultParagraph.innerText += step.value.operation + "\n";
       }
-      await sleep(340);
+
+      await sleep(step.value.tokens.length > 2 ? 320 : 210);
     } else if (s === CalculatorState.RESULT) {
       // final result
       resultParagraph.innerText += step.value.result + "\n";
       const finalToken = tokensParagraph.querySelector('[data-index="0"]');
+      await sleep(40);
       finalToken.style.background = "lightgreen";
       finalToken.style.transform = "scale(1.5)";
-      await sleep(400);
+      await sleep(600);
     }
     step = calc.next();
   }
@@ -496,7 +500,7 @@ const onStart = async (evt) => {
     setTimeout(() => {
       startBtn.disabled = false;
       startBtn.textContent = "Calculate";
-    }, 500);
+    }, 420);
     return;
   }
   // Clear texts
@@ -507,4 +511,7 @@ const onStart = async (evt) => {
   startBtn.disabled = false;
   startBtn.textContent = "Calculate";
 };
+
+const calc = calculator();
+changeState(CalculatorState.ON, TokenColors.READY);
 startBtn.addEventListener("click", onStart);
