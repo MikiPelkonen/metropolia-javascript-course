@@ -1,0 +1,121 @@
+/* smol w0rld default CSS */
+:root {
+  /* colors */
+  --smol-bg: rgb(30, 30, 46);
+  --smol-surface: rgb(49, 50, 68);
+  --smol-text: rgb(205, 214, 244);
+  --smol-subtext: rgb(186, 194, 222);
+  --smol-world: skyblue;
+  --smol-ocean: cornflowerblue;
+  --smol-island: sandybrown;
+  --smol-forest: forestgreen;
+  --smol-tree: burlywood;
+  --smol-branch: saddlebrown;
+  --smol-leaf: lightgreen;
+  /* fonts */
+  --smol-heading-font: "Comic Sans MS", "Trebuchet MS", "Impact", sans-serif;
+  --smol-text-font: Arial, Tahoma, Verdana, system-ui, sans-serif;
+  /* shadows */
+  --smol-text-shadow: 0.5px 1px 2px rgba(11, 11, 11, 0.9);
+  --smol-box-shadow: 0 1px 6px rgba(22, 22, 22, 0.6);
+
+  scroll-behavior: smooth;
+  font-size: 100%;
+  line-height: 1.4;
+  color: var(--smol-text);
+  background-color: var(--smol-bg);
+}
+
+body {
+  /* old browser fallback */
+  font-family: Arial, Tahoma, Verdana, system-ui, sans-serif;
+  font-family: var(--smol-text-font), Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+h1,
+h2,
+h3 {
+  /* old browser fallback */
+  font-family: "Comic Sans MS", "Trebuchet MS", "Impact", sans-serif;
+  font-family: var(--smol-heading-font), "Comic Sans MS", sans-serif;
+  line-height: 1.2;
+  font-weight: 700;
+  text-shadow: var(--smol-text-shadow);
+}
+
+h1 {
+  font-size: 2.4rem;
+}
+h2 {
+  font-size: 1.4rem;
+}
+h3 {
+  font-size: 1.1rem;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+.world {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.ocean {
+  width: 100%;
+  display: block;
+}
+
+.ocean.header,
+.ocean.footer {
+  padding: 1.5rem 0rem;
+  background-color: var(--smol-surface);
+}
+
+.island,
+.forest,
+.tree,
+.branch,
+.leaf {
+  display: block;
+}
+
+.leaf.loading {
+  filter: opacity(0.25) blur(20px);
+}
+
+.leaf.loaded {
+  filter: opacity(1) blur(0px);
+}
+
+.leaf {
+  transition: filter 0.3s ease;
+}
+
+.debug .world {
+  border: 1px dashed var(--smol-world);
+}
+.debug .ocean {
+  border: 1px dashed var(--smol-ocean);
+}
+.debug .island {
+  border: 1px dashed var(--smol-island);
+}
+.debug .forest {
+  border: 1px dashed var(--smol-forest);
+}
+.debug .tree {
+  border: 1px dashed var(--smol-tree);
+}
+.debug .branch {
+  border: 1px dashed var(--smol-branch);
+}
+.debug .leaf {
+  border: 1px dashed var(--smol-leaf);
+}
