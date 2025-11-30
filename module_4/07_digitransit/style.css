@@ -1,0 +1,81 @@
+::-webkit-scrollbar {
+  display: none;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+}
+
+#app {
+  text-align: center;
+}
+
+#map {
+  width: 100%;
+  height: 600px;
+  border-radius: 0.25rem;
+  box-shadow: var(--smol-box-shadow);
+  margin: 1rem 0;
+}
+
+#status {
+  margin: 0;
+  padding: 0.25rem;
+}
+
+.statusContainer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: flex-start;
+  text-align: left;
+}
+
+.statusItem {
+  font-size: 0.8rem;
+}
+
+.mainContent {
+  position: relative;
+  width: 100%;
+  max-width: 1200px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.main {
+  padding: 1rem;
+  flex-grow: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.formContainer {
+  position: relative;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  pointer-events: auto;
+}
+
+.transitForm {
+  width: 20rem;
+  height: 8rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.formInput {
+  padding: 0.5rem 0.25rem;
+  border-radius: inherit;
+}
