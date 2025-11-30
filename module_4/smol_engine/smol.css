@@ -14,9 +14,12 @@
   --smol-leaf: lightgreen;
   /* fonts */
   --smol-heading-font: "Comic Sans MS", "Trebuchet MS", "Impact", sans-serif;
-  --smol-text-font: Arial, Tahoma, Verdana, system-ui, sans-serif;
+  --smol-text-font:
+    system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
   /* shadows */
-  --smol-text-shadow: 0.5px 1px 2px rgba(11, 11, 11, 0.9);
+  --smol-text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
+  --smol-heading-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
   --smol-box-shadow: 0 1px 6px rgba(22, 22, 22, 0.6);
 
   scroll-behavior: smooth;
@@ -27,33 +30,39 @@
 }
 
 body {
-  /* old browser fallback */
-  font-family: Arial, Tahoma, Verdana, system-ui, sans-serif;
-  font-family: var(--smol-text-font), Arial, sans-serif;
   margin: 0;
   padding: 0;
   height: 100%;
 }
 
+body,
+p,
+li {
+  font-family: var(--smol-text-font);
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--smol-text);
+  text-shadow: 0 0 0 transparent;
+}
+
 h1,
 h2,
 h3 {
-  /* old browser fallback */
-  font-family: "Comic Sans MS", "Trebuchet MS", "Impact", sans-serif;
-  font-family: var(--smol-heading-font), "Comic Sans MS", sans-serif;
-  line-height: 1.2;
+  font-family: var(--smol-heading-font);
   font-weight: 700;
-  text-shadow: var(--smol-text-shadow);
+  line-height: 1.2;
+  color: var(--smol-subtext);
+  text-shadow: var(--smol-heading-shadow);
 }
 
 h1 {
-  font-size: 2.4rem;
+  font-size: 2.5rem;
 }
 h2 {
-  font-size: 1.4rem;
+  font-size: 2rem;
 }
 h3 {
-  font-size: 1.1rem;
+  font-size: 1.5rem;
 }
 
 * {
@@ -74,7 +83,11 @@ h3 {
 
 .ocean.header,
 .ocean.footer {
-  padding: 1.5rem 0rem;
+  padding: 1rem 0;
+}
+
+.ocean.header,
+.ocean.footer {
   background-color: var(--smol-surface);
 }
 

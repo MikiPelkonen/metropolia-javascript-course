@@ -341,8 +341,8 @@ window.smol = window.smol || {};
         const fetchOptions = {
           method,
           headers,
-          ...(body && { body: JSON.stringify(body) }),
           signal: abortController.signal,
+          ...(body && method !== "GET" && method !== "HEAD" ? { body } : {}),
         };
 
         if (this.debug)
